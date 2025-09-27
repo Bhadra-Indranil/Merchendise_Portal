@@ -11,6 +11,7 @@ export interface OrderItem {
   product: mongoose.Types.ObjectId;
   quantity: number;
   unitPrice: number;
+  customization?: { [key: string]: string };
 }
 
 export interface OrderDocument extends Document {
@@ -36,6 +37,7 @@ const OrderItemSchema = new Schema<OrderItem>(
     product: { type: Schema.Types.ObjectId, ref: "Product", required: true },
     quantity: { type: Number, required: true, min: 1 },
     unitPrice: { type: Number, required: true, min: 0 },
+    customization: { type: Map, of: String },
   },
   { _id: false }
 );

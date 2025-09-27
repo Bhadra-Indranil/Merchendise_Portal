@@ -24,6 +24,7 @@ export default function Layout({ children }: LayoutProps) {
               <Link to="/" className="nav-link">Home</Link>
               <Link to="/products" className="nav-link">Products</Link>
               <Link to="/orders" className="nav-link">Orders</Link>
+              <Link to="/group-orders/join" className="nav-link">Join Group Order</Link>
               <Link to="/cart" className="nav-link">
                 Cart ({count})
               </Link>

@@ -53,6 +53,12 @@ export default function GroupsAdmin() {
   });
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<GroupOrder | null>(null);
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingParticipant, setEditingParticipant] = useState<any>(null);
+  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+  const [newCustomization, setNewCustomization] = useState('');
 
   useEffect(() => {
     loadGroups();
@@ -75,7 +81,7 @@ export default function GroupsAdmin() {
   async function loadProducts() {
     try {
       const { data } = await api.get("/products");
-      setProducts(data.products || []);
+      setProducts(data.items || []);
     } catch (err) {
       console.error("Failed to load products", err);
     }
@@ -130,11 +136,19 @@ export default function GroupsAdmin() {
   }
 
   function handleProductChange(index: number, field: keyof GroupOrderItemForm, value: any) {
+    const newProducts = [...newGroupFormData.products];
+    newProducts[index] = { ...newProducts[index], [field]: value };
+
+    if (field === 'productId') {
+      const selectedProduct = products.find(p => p._id === value);
+      if (selectedProduct) {
+        newProducts[index].unitPrice = selectedProduct.price;
+      }
+    }
+
     setNewGroupFormData(prev => ({
       ...prev,
-      products: prev.products.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item
-      ),
+      products: newProducts,
     }));
   }
 
@@ -144,6 +158,43 @@ export default function GroupsAdmin() {
       await loadGroups();
     } catch (err: any) {
       setMessage(err?.response?.data?.message || "Failed to update status");
+    }
+  }
+
+  async function viewParticipants(group: GroupOrder) {
+    setSelectedGroup(group);
+    try {
+      const { data } = await api.get(`/orders/group/${group._id}`);
+      setParticipants(data.orders || []);
+    } catch (err) {
+      console.error("Failed to load participants", err);
+    }
+  }
+
+  function handleEditClick(participant: any, itemIndex: number) {
+    setEditingParticipant(participant);
+    setEditingItemIndex(itemIndex);
+    setNewCustomization(participant.items[itemIndex].customization?.note || '');
+    setShowEditModal(true);
+  }
+
+  async function handleUpdateCustomization() {
+    if (editingParticipant && editingItemIndex !== null) {
+      try {
+        await api.patch(`/orders/${editingParticipant._id}/items/${editingItemIndex}`, {
+          customization: { note: newCustomization },
+        });
+        setShowEditModal(false);
+        setEditingParticipant(null);
+        setEditingItemIndex(null);
+        setNewCustomization('');
+        // Refresh participants
+        if (selectedGroup) {
+          viewParticipants(selectedGroup);
+        }
+      } catch (err) {
+        console.error("Failed to update customization", err);
+      }
     }
   }
 
@@ -367,6 +418,7 @@ export default function GroupsAdmin() {
                   </div>
 
                   <div className="admin-item-actions">
+                    <button onClick={() => viewParticipants(group)} className="btn btn-outline">View Participants</button>
                     <div
                       className={`order-status ${getStatusColor(group.status)}`}
                     >
@@ -394,6 +446,52 @@ export default function GroupsAdmin() {
             </div>
           )}
         </div>
+
+        {selectedGroup && (
+          <div className="admin-list mt-3">
+            <h3 className="mb-2">Participants for {selectedGroup.name}</h3>
+            {participants.length === 0 ? (
+              <p>No participants yet.</p>
+            ) : (
+              <div>
+                {participants.map(participant => (
+                  <div key={participant._id} className="card mb-2">
+                    <p><strong>User:</strong> {participant.user.name} ({participant.user.email})</p>
+                    {participant.items.map((item: any, index: number) => (
+                      <div key={index} className="mt-1">
+                        <p><strong>Product:</strong> {item.product.name}</p>
+                        <p><strong>Quantity:</strong> {item.quantity}</p>
+                        {item.customization && item.customization.note && (
+                          <p><strong>Customization:</strong> {item.customization.note} <button onClick={() => handleEditClick(participant, index)} className="btn btn-outline btn-sm">Edit</button></p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {showEditModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="card" style={{ minWidth: '400px' }}>
+              <h3 className="mb-2">Edit Customization</h3>
+              <div className="form-group">
+                <label className="form-label">Customization Note</label>
+                <textarea
+                  className="form-input form-textarea"
+                  value={newCustomization}
+                  onChange={(e) => setNewCustomization(e.target.value)}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button onClick={handleUpdateCustomization} className="btn">Save</button>
+                <button onClick={() => setShowEditModal(false)} className="btn btn-secondary">Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

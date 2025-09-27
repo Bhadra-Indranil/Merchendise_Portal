@@ -34,16 +34,21 @@ export default function Cart() {
         <div className="card">
           <h3 className="mb-2">Cart Items</h3>
           
-          {items.map((item) => (
-            <div key={item.productId} className="cart-item">
+          {items.map((item, index) => (
+            <div key={index} className="cart-item">
               <div className="cart-item-info">
                 <div className="cart-item-name">{item.name}</div>
                 <div className="cart-item-price">
                   ₹ {item.unitPrice} × {item.quantity} = ₹ {item.unitPrice * item.quantity}
                 </div>
+                {item.customization && item.customization.note && (
+                  <div style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+                    Customization: {item.customization.note}
+                  </div>
+                )}
               </div>
               <button 
-                onClick={() => removeItem(item.productId)}
+                onClick={() => removeItem(index)}
                 className="btn btn-danger"
               >
                 Remove

@@ -7,6 +7,7 @@ import { Order } from "./models/Order";
 import { User } from "./models/User";
 import { sendMail } from "./services/email";
 import { sendSms } from "./services/sms";
+import { GroupOrder } from "./models/GroupOrder";
 
 const router = Router();
 
@@ -24,13 +25,15 @@ router.post("/create-order", authenticate, async (req: AuthRequest, res) => {
     notes,
     items,
     shippingAddress,
+    groupOrder,
   } = req.body as {
     amount: number; // in rupees
     currency?: string;
     receipt?: string;
     notes?: Record<string, string>;
-    items: { product: string; quantity: number; unitPrice: number }[];
+    items: { product: string; quantity: number; unitPrice: number, customization?: { [key: string]: string } }[];
     shippingAddress?: string;
+    groupOrder?: string;
   };
 
   if (!amount || amount <= 0)
@@ -53,6 +56,7 @@ router.post("/create-order", authenticate, async (req: AuthRequest, res) => {
     status: "pending",
     paymentProvider: "razorpay",
     shippingAddress: finalShippingAddress,
+    groupOrder,
   });
 
   // Razorpay expects paise
@@ -101,6 +105,12 @@ router.post("/verify", authenticate, async (req: AuthRequest, res) => {
   order.paymentSignature = razorpay_signature;
   order.status = "paid";
   await order.save();
+
+  if (order.groupOrder) {
+    await GroupOrder.findByIdAndUpdate(order.groupOrder, {
+      $addToSet: { participants: order.user },
+    });
+  }
 
   // Fire-and-forget notifications; ignore failures
   try {

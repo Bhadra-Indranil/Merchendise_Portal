@@ -8,10 +8,13 @@ async function start() {
     // eslint-disable-next-line no-console
     console.log("Connected to MongoDB");
 
-    app.listen(config.port, () => {
-      // eslint-disable-next-line no-console
-      console.log(`Server running on http://localhost:${config.port}`);
-    });
+    // Don't start listening here for Vercel
+    if (process.env.NODE_ENV !== 'production') {
+      app.listen(config.port, () => {
+        // eslint-disable-next-line no-console
+        console.log(`Server running on http://localhost:${config.port}`);
+      });
+    }
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error("Failed to start server", error);
@@ -20,3 +23,5 @@ async function start() {
 }
 
 start();
+
+export default app;

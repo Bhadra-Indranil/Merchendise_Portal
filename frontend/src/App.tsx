@@ -17,6 +17,7 @@ import DistributionAdmin from './pages/admin/DistributionAdmin';
 import Profile from './pages/Profile';
 import TrackOrder from './pages/TrackOrder';
 import GroupOrderDetails from './pages/GroupOrderDetails';
+import JoinGroupOrder from './pages/JoinGroupOrder';
 import './App.css';
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
               <Route path="/admin/groups" element={<Protected requiredRoles={['admin', 'dept_head']}><GroupsAdmin /></Protected>} />
               <Route path="/admin/distribution" element={<Protected requiredRoles={['admin']}><DistributionAdmin /></Protected>} />
               <Route path="/profile" element={<Protected><Profile /></Protected>} />
+              <Route path="/group-orders/join" element={<JoinGroupOrder />} />
               <Route path="/group-orders/:uniqueCode" element={<GroupOrderDetails />} />
             </Routes>
           </Layout>

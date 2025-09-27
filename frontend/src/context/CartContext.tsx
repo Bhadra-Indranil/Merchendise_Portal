@@ -5,12 +5,14 @@ interface CartItem {
   name: string;
   unitPrice: number;
   quantity: number;
+  customization?: { [key: string]: string };
+  groupOrder?: string;
 }
 
 interface CartContextType {
   items: CartItem[];
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
-  removeItem: (productId: string) => void;
+  removeItem: (index: number) => void;
   clear: () => void;
   total: number;
   count: number;
@@ -23,10 +25,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   function addItem(newItem: Omit<CartItem, 'quantity'>) {
     setItems(prev => {
-      const existing = prev.find(item => item.productId === newItem.productId);
+      const existing = prev.find(item => item.productId === newItem.productId && JSON.stringify(item.customization) === JSON.stringify(newItem.customization));
       if (existing) {
         return prev.map(item =>
-          item.productId === newItem.productId
+          item.productId === newItem.productId && JSON.stringify(item.customization) === JSON.stringify(newItem.customization)
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
@@ -35,8 +37,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }
 
-  function removeItem(productId: string) {
-    setItems(prev => prev.filter(item => item.productId !== productId));
+  function removeItem(index: number) {
+    setItems(prev => prev.filter((_, i) => i !== index));
   }
 
   function clear() {
